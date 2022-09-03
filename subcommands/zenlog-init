@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # zenlog init: Initialize ~/.zenlog.toml and ~/.bashrc/ or ~/.zshrc.
 

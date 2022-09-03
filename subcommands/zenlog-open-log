@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Open log file selected with fzf with ZENLOG_VIEWER.
 #

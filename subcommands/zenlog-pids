@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Show all running zenlog PIDs.
 # Note this command just uses the named pipe filenames. If there was a zenlog

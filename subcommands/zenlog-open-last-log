@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Open last log file with ZENLOG_VIEWER.
 #

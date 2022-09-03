@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # zenlog update: Install the latest zenlog from github.
 
