@@ -2,7 +2,7 @@
 
 # Open the given filename in ZENLOG_VIEWER.
 
-set -e
+set -eou pipefail
 
 file="$1"
 
