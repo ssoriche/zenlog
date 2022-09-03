@@ -13,4 +13,9 @@ fi
 
 echo "zenlog: Opening $file ..."
 
-"${ZENLOG_VIEWER:-$PAGER}" "$file"
+viewer="${ZENLOG_VIEWER:-$PAGER}"
+if [[ $viewer == "" ]] && command -v less >/dev/null 2>&1; then
+    viewer="less"
+fi
+
+"$viewer" "$file"
