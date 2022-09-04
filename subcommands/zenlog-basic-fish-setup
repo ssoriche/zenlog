@@ -1,0 +1,16 @@
+function zenlog_dump_env 
+  begin
+      echo "PWD: $(pwd)"
+      # echo "git HEAD: $(git rev-parse HEAD) $(git rev-parse --abbrev-ref HEAD)"
+      echo "git HEAD: $(fish_git_prompt)"
+      env
+  end 2> /dev/null
+end
+
+function zenlog_preexec_command --on-event fish_preexec
+  zenlog start-command -e "$(zenlog_dump_env)" "$argv"
+end
+
+function zenlog_postexec_command --on-event fish_postexec
+  zenlog end-command $status
+end
