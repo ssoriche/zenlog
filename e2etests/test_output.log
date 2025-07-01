@@ -1,0 +1,11 @@
+readlink: illegal option -- m
+usage: readlink [-fn] [file ...]
+./zenlog-test-common: line 6: /../scripts/build.sh: No such file or directory
+script: illegal option -- c
+usage: script [-aeFkpqr] [-t time] [file [command ...]]
+       script -p [-deq] [-T fmt] [file]
+Creating tree...
+./zenlog-test-common: line 56: /../bin/zenlog: No such file or directory
+Checking log files...
+diff: /files/diff-ignore-files.txt: No such file or directory
+Some tests failed.

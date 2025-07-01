@@ -1,6 +1,7 @@
 package logfiles
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -14,36 +15,41 @@ import (
 func TestCreateLogFiles(t *testing.T) {
 	config := config.Config{}
 
-	os.Setenv("TZ", "America/Los_Angeles")
-
 	config.LogDir = "/tmp/zenlog-test/log/"
 	config.ZenlogPid = 111
 	config.PrefixCommands = "(?:time|sudo|[a-zA-Z0-9_]+=.*)"
 
 	os.RemoveAll(config.LogDir)
 
-	// TODO The input time is GMT but the logfilename uses a local time.
-	// This needs to generate a local time. How?
-	clock := utils.NewInjectedClock(time.Unix(1319202062, 123*1000*1000))
+	// Use system local time to make test portable across different timezones
+	baseTime := time.Unix(1319202062, 123*1000*1000).Local()
+
+	// Generate expected log paths for each test case
 	tests := []struct {
 		commandLine string
-		log         string
+		timeOffset  time.Duration
+		logSuffix   string
 	}{
-		{"/bin/echo ok", "/tmp/zenlog-test/log/SAN/2011/10/21/06-01-02.123-00111_+echo_ok.log"},
-		{"/bin/echo ok # comment tag ", "/tmp/zenlog-test/log/SAN/2011/10/21/06-02-02.123-00111_+comment_tag_+echo_ok_comment_tag.log"},
-		{"echo ok", "/tmp/zenlog-test/log/SAN/2011/10/21/06-03-02.123-00111_+echo_ok.log"},
-		{"./echo ok", "/tmp/zenlog-test/log/SAN/2011/10/21/06-04-02.123-00111_+echo_ok.log"},
-
-		// Note for log filenames, we do *not* use PREFIX_COMMAND.
-		// PREFIX_COMMAND is only used to decide the directory name under $ZENLOG_DIR/cmds/.
-		{"time echo ok", "/tmp/zenlog-test/log/SAN/2011/10/21/06-05-02.123-00111_+time_echo_ok.log"},
+		{"/bin/echo ok", 0, "_+echo_ok.log"},
+		{"/bin/echo ok # comment tag ", time.Minute, "_+comment_tag_+echo_ok_comment_tag.log"},
+		{"echo ok", 2 * time.Minute, "_+echo_ok.log"},
+		{"./echo ok", 3 * time.Minute, "_+echo_ok.log"},
+		{"time echo ok", 4 * time.Minute, "_+time_echo_ok.log"},
 	}
+
+	clock := utils.NewInjectedClock(baseTime)
 	for _, v := range tests {
+		testTime := baseTime.Add(v.timeOffset)
+		expectedPath := fmt.Sprintf("/tmp/zenlog-test/log/SAN/%04d/%02d/%02d/%02d-%02d-%02d.%03d-%05d%s",
+			testTime.Year(), testTime.Month(), testTime.Day(),
+			testTime.Hour(), testTime.Minute(), testTime.Second(),
+			testTime.Nanosecond()/1000000, config.ZenlogPid, v.logSuffix)
+
 		actual := CreateAndOpenLogFiles(&config, clock.Now(), ParseCommandLine(&config, v.commandLine))
 		defer actual.Close()
-		util.AssertStringsEqual(t, v.commandLine, v.log, actual.SanFile)
-		util.AssertStringsEqual(t, v.commandLine, strings.Replace(v.log, "SAN", "RAW", 1), actual.RawFile)
-		util.AssertStringsEqual(t, v.commandLine, strings.Replace(v.log, "SAN", "ENV", 1), actual.EnvFile)
+		util.AssertStringsEqual(t, v.commandLine, expectedPath, actual.SanFile)
+		util.AssertStringsEqual(t, v.commandLine, strings.Replace(expectedPath, "SAN", "RAW", 1), actual.RawFile)
+		util.AssertStringsEqual(t, v.commandLine, strings.Replace(expectedPath, "SAN", "ENV", 1), actual.EnvFile)
 		util.AssertFileExist(t, actual.SanFile)
 		util.AssertFileExist(t, actual.RawFile)
 		util.AssertFileExist(t, actual.EnvFile)

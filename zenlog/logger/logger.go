@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"syscall"
 
 	"github.com/creack/pty"
 	isatty "github.com/mattn/go-isatty"
@@ -43,18 +42,7 @@ type Logger struct {
 	clock utils.Clock
 }
 
-func mustMakeFifo(config *config.Config, suffix string) *os.File {
-	filename := fmt.Sprintf("%szenlog.%d%s.pipe", config.TempDir, config.ZenlogPid, suffix)
-	os.Remove(filename)
-
-	util.Debugf("Making fifo '%s'...", filename)
-	err := syscall.Mkfifo(filename, 0o600)
-	util.Check(err, "Makefifo failed for '%s'", filename)
-
-	file, err := os.OpenFile(filename, os.O_RDWR, 0o600)
-	util.Check(err, "OpenFile failed for '%s'", filename)
-	return file
-}
+// mustMakeFifo is implemented in platform-specific files
 
 func NewLogger(config *config.Config) *Logger {
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
