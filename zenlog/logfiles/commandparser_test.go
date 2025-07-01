@@ -1,9 +1,10 @@
 package logfiles
 
 import (
+	"testing"
+
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"testing"
 )
 
 func TestSplitComment(t *testing.T) {

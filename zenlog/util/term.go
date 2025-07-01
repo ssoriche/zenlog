@@ -1,14 +1,14 @@
 package util
 
-// #include <unistd.h>
-import "C"
-
 import (
 	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
 )
+
+// #include <unistd.h>
+import "C"
 
 type window struct {
 	row    uint16
@@ -18,8 +18,10 @@ type window struct {
 }
 
 func Ttyname(fd uintptr) string {
-	name, _ := C.ttyname(C.int(fd))
-
+	name := C.ttyname(C.int(fd))
+	if name == nil {
+		return ""
+	}
 	return C.GoString(name)
 }
 
@@ -71,7 +73,7 @@ func Tty() string {
 //	return nil
 //}
 
-func PropagateTerminalSize(from *os.File, to *os.File) error {
+func PropagateTerminalSize(from, to *os.File) error {
 	w := new(window)
 	_, _, err := syscall.Syscall(syscall.SYS_IOCTL,
 		from.Fd(),
@@ -79,7 +81,7 @@ func PropagateTerminalSize(from *os.File, to *os.File) error {
 		uintptr(unsafe.Pointer(w)),
 	)
 	if err != 0 {
-		return fmt.Errorf("Ioctl(TIOCGWINSZ) failed. errno=%d", err)
+		return fmt.Errorf("Ioctl(TIOCGWINSZ) failed. errno=%w", err)
 	}
 	_, _, err = syscall.Syscall(syscall.SYS_IOCTL,
 		to.Fd(),
@@ -87,7 +89,7 @@ func PropagateTerminalSize(from *os.File, to *os.File) error {
 		uintptr(unsafe.Pointer(w)),
 	)
 	if err != 0 {
-		return fmt.Errorf("Ioctl(TIOCSWINSZ) failed. errno=%d", err)
+		return fmt.Errorf("Ioctl(TIOCSWINSZ) failed. errno=%w", err)
 	}
 	return nil
 }

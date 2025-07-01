@@ -2,10 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/omakoto/go-common/src/utils"
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"time"
 )
 
 type StopRequest struct {

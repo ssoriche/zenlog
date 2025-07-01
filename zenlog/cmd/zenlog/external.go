@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/omakoto/zenlog/zenlog/config"
-	"github.com/omakoto/zenlog/zenlog/util"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/omakoto/zenlog/zenlog/config"
+	"github.com/omakoto/zenlog/zenlog/util"
 )
 
-func tryRunExternalCommand(path string, command string, args []string) {
+func tryRunExternalCommand(path, command string, args []string) {
 	f, err := filepath.Abs(path + "/zenlog-" + command)
 	util.Check(err, "Abs failed")
 

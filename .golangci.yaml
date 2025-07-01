@@ -1,0 +1,110 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+output:
+  formats:
+    - format: colored-line-number
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+
+  gocyclo:
+    min-complexity: 15
+
+  goimports:
+    local-prefixes: github.com/ssoriche/zenlog
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+    disable:
+      - fieldalignment # Memory layout optimization, not critical for CI
+
+  lll:
+    line-length: 120
+
+  misspell:
+    locale: US
+
+  nakedret:
+    max-func-lines: 30
+
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+
+  unparam:
+    check-exported: false
+
+  unused:
+    check-exported: false
+
+  whitespace:
+    multi-if: false
+    multi-func: false
+
+linters:
+  enable:
+    # Critical linters that should fail CI (functional correctness)
+    - errcheck # Unchecked errors can cause real bugs
+    - gosimple # Simplifications that prevent bugs
+    - govet # Finds real bugs and suspicious constructs
+    - ineffassign # Ineffective assignments can indicate bugs
+    - staticcheck # Finds bugs and performance issues
+    - typecheck # Type errors will break compilation
+    - unused # Unused code can indicate logic errors
+    - gofmt # Code must be formatted consistently
+    - goimports # Imports must be formatted consistently
+
+    # Code quality linters (nice to have, don't fail CI for now)
+    # These can be enabled later as warnings:
+    # - funlen          # Function length suggestions
+    # - gocognit        # Cognitive complexity warnings
+    # - gocyclo         # Cyclomatic complexity warnings
+    # - gocritic        # Style and performance suggestions
+    # - nestif          # Nesting complexity warnings
+    # - errorlint       # Error handling best practices
+    # - revive          # Style suggestions
+    # - whitespace      # Formatting suggestions
+    # - nilerr          # Nil error handling suggestions
+    # - dupl            # Code duplication detection
+    # - nakedret        # Naked return suggestions
+    # - prealloc        # Memory allocation optimization
+    # - unparam         # Unused parameter detection
+    # - misspell        # Spelling suggestions
+    # - gosec           # Security suggestions
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on test files
+    - path: _test\.go
+      linters:
+        - gomnd
+        - funlen
+        - goconst
+
+    # Exclude shadow checking on error variables in tests
+    - path: _test\.go
+      text: "shadow"
+      linters:
+        - govet
+
+  max-issues-per-linter: 0
+  max-same-issues: 0

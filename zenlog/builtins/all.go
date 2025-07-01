@@ -26,10 +26,13 @@ func AllCommandsAndLogCommand(args []string) {
 	c := flags.Bool("c", false, "Limit to current zenlog session")
 	l := flags.Bool("l", false, "Print log filenames only, no commands")
 
-	flags.Parse(args)
+	parseErr := flags.Parse(args)
+	if parseErr != nil {
+		util.Fatalf("flags.Parse failed: %v", parseErr)
+	}
 
 	now := util.GetInjectedNow(utils.NewClock())
-	wf := func(path string, info os.FileInfo, err error) error {
+	wf := func(path string, info os.FileInfo, _ error) error {
 		if now.Sub(info.ModTime()).Hours() > (*n * 24) {
 			return nil
 		}
@@ -73,7 +76,10 @@ func AllCommandsAndLogCommand(args []string) {
 	}
 
 	util.Debugf("root=%s", root)
-	filepath.Walk(root, wf)
+	err := filepath.Walk(root, wf)
+	if err != nil {
+		util.Warn(err, "filepath.Walk failed")
+	}
 
 	util.Exit(true)
 }

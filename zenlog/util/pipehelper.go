@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	//commandMarker = "!zenlog:"
-	//escape         = '\\'
+	// commandMarker = "!zenlog:"
+	// escape         = '\\'
 
 	commandMarker = "\x1b\x01\x09\x07\x03\x02\x05zenlog:"
 	escape        = '\x1b'
@@ -37,10 +37,9 @@ func _hexToInt(v uint8) uint8 {
 		return v - '0'
 	} else if 'a' <= v && v <= 'f' {
 		return v - 'a' + 10
-	} else {
-		panic(fmt.Sprintf("Invalid value %d", v))
 	}
-}
+	panic(fmt.Sprintf("Invalid value %d", v))
+} // nolint:typecheck // panic never returns
 
 func _encodeSingle(b *bytes.Buffer, arg string) {
 	for j := 0; j < len(arg); j++ {

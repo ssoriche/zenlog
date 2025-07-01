@@ -1,10 +1,10 @@
 package config
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -13,7 +13,6 @@ import (
 	"github.com/omakoto/go-common/src/utils"
 	"github.com/omakoto/zenlog/zenlog/envs"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"runtime"
 )
 
 var (
@@ -57,7 +56,7 @@ type Config struct {
 }
 
 // If a string is empty, get from a given environmental variabne.
-func overwriteWithEnviron(to *string, envKey string, def string) {
+func overwriteWithEnviron(to *string, envKey, def string) {
 	if val := os.Getenv(envKey); val != "" {
 		*to = val
 	} else {
@@ -79,7 +78,7 @@ func ensureSlash(v *string) {
 	if strings.HasSuffix(*v, "/") {
 		return
 	}
-	*v = *v + "/"
+	*v += "/"
 }
 
 // InitConfigForLogger returns a Config for a new session, loading from ~/.zenlog.toml and the environmental variables.
@@ -95,10 +94,10 @@ func InitConfigForLogger() *Config {
 
 	util.Debugf("config=%s", file)
 
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err == nil {
-		if _, err := toml.Decode(string(data), &c); err != nil {
-			util.Fatalf("Unable to load %s: %s", file, err)
+		if _, decodeErr := toml.Decode(string(data), &c); decodeErr != nil {
+			util.Fatalf("Unable to load %s: %s", file, decodeErr)
 		}
 	} else if os.IsNotExist(err) {
 		util.Warn(err, "%s doesn't exist; using the default instead", file)

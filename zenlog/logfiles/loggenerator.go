@@ -52,7 +52,8 @@ func clamp(v string, maxLen int) string {
 
 // Create and open a log file with the parent directory, if needed.
 func open(name string, truncate, append bool) (*os.File, *bufio.Writer) {
-	os.MkdirAll(filepath.Dir(name), 0700)
+	err := os.MkdirAll(filepath.Dir(name), 0o700)
+	util.Check(err, "MkdirAll failed for %s", name)
 	mode := os.O_WRONLY | os.O_CREATE
 	if truncate {
 		mode |= os.O_TRUNC
@@ -60,7 +61,7 @@ func open(name string, truncate, append bool) (*os.File, *bufio.Writer) {
 	if append {
 		mode |= os.O_APPEND
 	}
-	f, err := os.OpenFile(name, mode, 0600)
+	f, err := os.OpenFile(name, mode, 0o600)
 	util.Check(err, "Cannot create logfile %s", name)
 	return f, bufio.NewWriter(f)
 }
@@ -83,8 +84,10 @@ func ensureSymLink(from, to string) {
 		}
 	} else {
 		if fi.Mode()&os.ModeSymlink != 0 {
-			e, _ := os.Readlink(to)
-			if e == from {
+			e, err := os.Readlink(to)
+			if err != nil {
+				util.Warn(err, "Readlink failed for %s", to)
+			} else if e == from {
 				return // already exists.
 			}
 		}
@@ -155,7 +158,7 @@ func createLinks(config *config.Config, parentDirName, childDirName, logType, lo
 	fullDirName := fullChildDir + logType + "/" +
 		fmt.Sprintf("%04d/%02d/%02d", now.Year(), now.Month(), now.Day()) + "/"
 
-	util.Warn(os.MkdirAll(fullDirName, 0700), "MkdirAll failed")
+	util.Warn(os.MkdirAll(fullDirName, 0o700), "MkdirAll failed")
 	makeSymlink(logFullFileName, fullDirName+filepath.Base(logFullFileName), false)
 	createPrevLink(fullChildDir, logType, logFullFileName)
 }
@@ -241,37 +244,45 @@ func (l *LogFiles) Close() {
 
 // TODO Move the following functions to somewhere else...
 
+// Helper function to write to env with error checking
+func (l *LogFiles) writeToEnv(s string) {
+	_, err := l.Env.WriteString(s)
+	if err != nil {
+		util.Warn(err, "WriteString failed")
+	}
+}
+
 func (l *LogFiles) writeTimeToEnv(key string, t time.Time) {
-	l.Env.WriteString(key)
-	l.Env.WriteString(": ")
-	l.Env.WriteString(fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d",
+	l.writeToEnv(key)
+	l.writeToEnv(": ")
+	l.writeToEnv(fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d",
 		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second()))
-	l.Env.WriteString("\n")
+	l.writeToEnv("\n")
 }
 
 // WriteEnv writes the command start information to the ENV file, and a string given via 'env', to the ENV log file.
 func (l *LogFiles) WriteEnv(command *Command, envs string, startTime time.Time) {
-	l.Env.WriteString("Command: ")
-	l.Env.WriteString(command.CommandLine)
-	l.Env.WriteString("\n")
+	l.writeToEnv("Command: ")
+	l.writeToEnv(command.CommandLine)
+	l.writeToEnv("\n")
 
 	l.writeTimeToEnv("Start time", startTime)
 
-	l.Env.WriteString(envs)
+	l.writeToEnv(envs)
 	if envs[len(envs)-1] != '\n' {
-		l.Env.WriteString("\n")
+		l.writeToEnv("\n")
 	}
 }
 
 // WriteFinishToEnv write the command finish information to the ENV file.
 func (l *LogFiles) WriteFinishToEnv(exitCode int, startTime, finishTime time.Time) {
-	l.Env.WriteString("Exit status: ")
-	l.Env.WriteString(strconv.Itoa(exitCode))
-	l.Env.WriteString("\n")
+	l.writeToEnv("Exit status: ")
+	l.writeToEnv(strconv.Itoa(exitCode))
+	l.writeToEnv("\n")
 
 	l.writeTimeToEnv("Finish time", finishTime)
 
-	l.Env.WriteString("Duration: ")
-	l.Env.WriteString(finishTime.Sub(startTime).String())
-	l.Env.WriteString("\n")
+	l.writeToEnv("Duration: ")
+	l.writeToEnv(finishTime.Sub(startTime).String())
+	l.writeToEnv("\n")
 }

@@ -1,12 +1,13 @@
 package main
 
 import (
+	"runtime"
+
 	"github.com/omakoto/go-common/src/utils"
 	"github.com/omakoto/zenlog/zenlog"
 	"github.com/omakoto/zenlog/zenlog/builtins"
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"runtime"
 )
 
 func restart() {

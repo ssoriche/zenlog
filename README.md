@@ -10,17 +10,19 @@ Zenlog wraps a login shell and automatically saves all the output of each comman
 file, along with metadata such as each command start/finish time, the current directory, etc.
 
 It has various applications:
- - Want to open the output of the last command in my faviroite editor!
-    - With the default installation you can do it with simply pressing `ALT+1` on the command line.
-     
- - "What was the output of `lsusb` command I ran a month ago?"
-    - Zenlog keeps log files in such a way that it's easy to find out a specific output, with
-        meta-information such as the directory it was executed in, the git branch, the execution
-        time, etc.
-        
- - The previous command output had an HTTP link. I want to open it in the browser.
-   - Zenlog provides various commands to access the output of previous commands, to help write a script like this. 
-    
+
+- Want to open the output of the last command in my faviroite editor!
+
+  - With the default installation you can do it with simply pressing `ALT+1` on the command line.
+
+- "What was the output of `lsusb` command I ran a month ago?"
+
+  - Zenlog keeps log files in such a way that it's easy to find out a specific output, with
+    meta-information such as the directory it was executed in, the git branch, the execution
+    time, etc.
+
+- The previous command output had an HTTP link. I want to open it in the browser.
+  - Zenlog provides various commands to access the output of previous commands, to help write a script like this.
 
 The primary target shell is Bash 4.4 or later (Zenlog requires the `PS0` (aka preexec) hook added
 in Bash 4.4), but any shell with similar syntax with a pre-exec hook should work with zenlog. It
@@ -31,8 +33,8 @@ comes with an installation script that supports both Bash and Zsh.
 [See the readme of the old version.](https://github.com/omakoto/zenlog-legacy)
 
 Zenlog uses the same idea as the previous perl/ruby versions,
-but is a complete write in Go, and no longer relies on script(1), and 
-instead it'll create a PTY by itself. 
+but is a complete write in Go, and no longer relies on script(1), and
+instead it'll create a PTY by itself.
 
 ## Quick start: Install and set up
 
@@ -40,14 +42,16 @@ To install, set up the Go SDK and follow the below instructions:
 
 The `go get` method probably won't work anymore because it won't download the source file into
 `$HOME/go/src`. So now instead, you'll need to download the source file manually with `git clone`,
-and run `scripts/install.sh`, and set `$ZENLOG_SRC_DIR` to `$HOME/src/zenlog/`. 
+and run `scripts/install.sh`, and set `$ZENLOG_SRC_DIR` to `$HOME/src/zenlog/`.
 Example:
+
 ```
 mkdir $HOME/src
 cd $HOME/src
 git clone https://github.com/omakoto/zenlog.git
 ./zenlog/scripts/install.sh
 ```
+
 ... And add `export ZENLOG_SRC_DIR=$HOME/src/zenlog/` to your `.*shrc`.
 
 Then, run the following command to create `~/.zenlog.toml` and update `.bashrc` (or `.zshrc`):
@@ -67,25 +71,27 @@ in `less`. (If the hotkey doesn't work, then run `zenlog open-last-log` instead.
 
 ## Customization
 
- - [`~/.zenlog.toml`](dot_zenlog.toml) contains various configuration such as the log directory. 
+- [`~/.zenlog.toml`](dot_zenlog.toml) contains various configuration such as the log directory.
 
- - Set `$ZENLOG_VIEWER` and `$ZENLOG_RAW_VIEWER` to change what command to use to open log files.
-Set it in `.bashrc` / `.zshrc`.
+- Set `$ZENLOG_VIEWER` and `$ZENLOG_RAW_VIEWER` to change what command to use to open log files.
+  Set it in `.bashrc` / `.zshrc`.
 
 ## Manual Bash / Zsh Setup
 
- - Create `.zenlog.toml` in your home directory:
- 
+- Create `.zenlog.toml` in your home directory:
+
 ```bash
 cp "$(zenlog zenlog-src-top)/dot_zenlog.toml" "$HOME/.zenlog.toml"
-``` 
+```
 
- - Then, if you're using Bash, add the following line to your `~/.bashrc`.
+- Then, if you're using Bash, add the following line to your `~/.bashrc`.
+
 ```bash
 . <(zenlog basic-bash-setup)
 ```
 
- - Then, if you're using Zsh, add it to your `~/.zrc`.
+- Then, if you're using Zsh, add it to your `~/.zrc`.
+
 ```zsh
 . <(zenlog basic-zsh-setup)
 ```
@@ -94,9 +100,9 @@ cp "$(zenlog zenlog-src-top)/dot_zenlog.toml" "$HOME/.zenlog.toml"
 
 Any shell should work, as long as it supports some sort of "pre-exec" and "post-exec" hooks.
 
- - Look at the output of `zenlog basic-bash-setup` and figure it out.
+- Look at the output of `zenlog basic-bash-setup` and figure it out.
 
-(However if your shell's command line syntax is far from Posix shell's, then Zenlog may not be able to extract command names 
+(However if your shell's command line syntax is far from Posix shell's, then Zenlog may not be able to extract command names
 property and you may not get "per command" output links.)
 
 ## Log file structure
@@ -109,7 +115,7 @@ By default, log files are stored in `$HOME/zenlog/`, with the following structur
  |     +--MONTH
  |        +--DAY
  |           +--log files...
- | 
+ |
  +--RAW/ # "Raw", or the original output
  |  +--YEAR... (same structure)
  |
@@ -131,16 +137,16 @@ By default, log files are stored in `$HOME/zenlog/`, with the following structur
  |  |  |--E
  |  |  |--EE
  |  |  |--...
- |  |  
+ |  |
  |  +--ls
  |  :
- | 
+ |
  +--pids/  # Per-pid, or "session", output.
  |  + (same strucute)
- | 
+ |
  +--tags/  # Per "tag" output.
  |  + (same strucute)
- | 
+ |
  |--S  # Link to the last command output.
  |--SS # Link to the second last command output.
  |--...
@@ -150,72 +156,169 @@ By default, log files are stored in `$HOME/zenlog/`, with the following structur
  |--E
  |--EE
  |--...
- 
+
 ```
 
- - "RAW" log files contain the original output, including all the escape sequences. It's authentic
-   but hard to grep.
-    
- - "SAW" log files contain the original output with escape sequences stripped out, so easy to grep.
-   (Note Zenlog only recognizes often-used escape sequences. Uncommon escape sequences may
-   still be left.)
- 
- - "ENV" log files contain various meta inforamtion such as the current directory, execution time,
-   git branch, etc.
-   
- - "S" is a symbolic link to the most recent SAN log file. "R" for RAW, "E" for ENV.
- - "SS", "RR", "EE" are links to the second most log files.
- 
- - Zenlog also creates symbolic links for each command and "sessions".
-   For example `"$ZENLOG_DIR/pids/$ZENLOG_PID/S"` is a link to the most recent SAN log file
-   *on the current shell*. Conversely, `"$ZENLOG_DIR/S"` is the most recent command, which may
-   be from a different shell.
-   
+- "RAW" log files contain the original output, including all the escape sequences. It's authentic
+  but hard to grep.
+
+- "SAW" log files contain the original output with escape sequences stripped out, so easy to grep.
+  (Note Zenlog only recognizes often-used escape sequences. Uncommon escape sequences may
+  still be left.)
+
+- "ENV" log files contain various meta inforamtion such as the current directory, execution time,
+  git branch, etc.
+
+- "S" is a symbolic link to the most recent SAN log file. "R" for RAW, "E" for ENV.
+- "SS", "RR", "EE" are links to the second most log files.
+
+- Zenlog also creates symbolic links for each command and "sessions".
+  For example `"$ZENLOG_DIR/pids/$ZENLOG_PID/S"` is a link to the most recent SAN log file
+  _on the current shell_. Conversely, `"$ZENLOG_DIR/S"` is the most recent command, which may
+  be from a different shell.
+
 ### Log "tagging"
 
 If you run a command with a comment, for example:
+
 ```bash
-$ make -B # full build 
+$ make -B # full build
 ```
+
 then Zenlog creates symbolic links in the `tags/` directory too, so `$ZENLOG_DIR/tags/full_build/S`
 will be a symbolic link to the most recent "full build" output.
 
 ## Advanced customization
 
- - If you do not want to log output of a specific command (e.g. it doesn't really make sense
-   to keep all output from `vi`, `emacs`), you can specify it in
-   [`~/.zenlog.toml`](dot_zenlog.toml).
-   
-   - By default, output from any `zenlog` subcommands will *not* be saved.      
+- If you do not want to log output of a specific command (e.g. it doesn't really make sense
+  to keep all output from `vi`, `emacs`), you can specify it in
+  [`~/.zenlog.toml`](dot_zenlog.toml).
+
+  - By default, output from any `zenlog` subcommands will _not_ be saved.
 
 ## Useful subcommands
 
- - `zenlog purge-log [-p DAYS] [-y] [-P]`
-   - Removes all log files older than `DAYS` days.
-     
-     `-y` to execute without a [y/n] prompt.
-     
-     `-P` for dry-run.    
+- `zenlog purge-log [-p DAYS] [-y] [-P]`
 
- - `zenlog du [du(1) options]`
-   - Run `du(1)` over the log directory.
+  - Removes all log files older than `DAYS` days.
 
+    `-y` to execute without a [y/n] prompt.
 
- - `zenlog history [-e] [-r] [-n Nth] [-p PID]`
-   - Print recent log file names.
-   
-     `-e` to show the `ENV` log file name instead of `SAN`.
-     
-     `-r` to show the `RAW` log file name instead of `SAN`.
-     
-     `-n Nth` Show Nth most recent log file name.
-     
-       - Note: When you're using this command from a script, the previous command output
-        is `-n 1`. But if you're using `zenlog history` from a command that's bound to a hot key
-        on the command line, `-n 0` refers to the the previous output. 
-     
- - See [this directory](subcommands/) for more (external) subcommands.
-   [This file](zenlog/builtins/builtins.go) contains more "buildin" subcommands.  
+    `-P` for dry-run.
+
+- `zenlog du [du(1) options]`
+
+  - Run `du(1)` over the log directory.
+
+- `zenlog history [-e] [-r] [-n Nth] [-p PID]`
+
+  - Print recent log file names.
+
+    `-e` to show the `ENV` log file name instead of `SAN`.
+
+    `-r` to show the `RAW` log file name instead of `SAN`.
+
+    `-n Nth` Show Nth most recent log file name.
+
+    - Note: When you're using this command from a script, the previous command output
+      is `-n 1`. But if you're using `zenlog history` from a command that's bound to a hot key
+      on the command line, `-n 0` refers to the the previous output.
+
+- See [this directory](subcommands/) for more (external) subcommands.
+  [This file](zenlog/builtins/builtins.go) contains more "buildin" subcommands.
 
 [See also the readme of the old version.](https://github.com/omakoto/zenlog)
 
+## Development
+
+### Prerequisites
+
+- Go 1.24 or later
+- Make (optional, but recommended)
+
+### Quick Start for Contributors
+
+1. **Clone and set up the repository:**
+
+   ```bash
+   git clone https://github.com/ssoriche/zenlog.git
+   cd zenlog
+   ```
+
+2. **Install development tools (matches CI exactly):**
+
+   ```bash
+   make install-tools
+   # or manually: bash scripts/install-golangci-lint.sh
+   ```
+
+3. **Run the same checks as CI locally:**
+   ```bash
+   make lint          # Full linting suite (same as CI)
+   make test          # Unit tests
+   make presubmit     # Everything before creating a PR
+   ```
+
+### Key Commands
+
+- `make help` - Show all available commands
+- `make lint` - Run ALL linting checks (same as CI)
+- `make format` - Auto-fix code formatting
+- `make check-format` - Quick format check
+- `make test` - Run unit tests
+- `make test-race` - Run tests with race detection
+- `make presubmit` - Run all pre-submission checks
+
+### Ensuring CI Consistency 🎯
+
+**Problem:** Different golangci-lint versions between local and CI cause inconsistent results.
+
+**Solution:** This project ensures exact version matching:
+
+1. **CI uses pinned version:** GitHub Actions uses golangci-lint v1.64.8
+2. **Local uses same version:** `make install-tools` installs the exact same version
+3. **Same configuration:** Both use `.golangci.yaml` config file
+4. **Same timeout:** Both use 5-minute timeout
+
+**Before submitting a PR:**
+
+```bash
+make presubmit  # This runs the EXACT same checks as CI
+```
+
+If `make presubmit` passes locally, your PR will pass CI! 🎯
+
+### Legacy Scripts (Still Available)
+
+For compatibility, the original scripts are still available:
+
+```bash
+./scripts/check-format.sh    # Quick formatting check
+./scripts/presubmit.sh       # Full presubmit checks
+```
+
+These have been enhanced to use the CI-exact golangci-lint version.
+
+### Development Workflow
+
+1. Make your changes
+2. Run `make format` to auto-fix formatting
+3. Run `make lint` to check for issues
+4. Run `make test` to ensure tests pass
+5. Run `make presubmit` before creating PR
+
+### Troubleshooting
+
+- **"golangci-lint version mismatch"**: Run `make install-tools` to get the CI version
+- **"Formatting issues"**: Run `make format` to auto-fix
+- **"Different results than CI"**: Ensure you're using `make lint` (not `golangci-lint` directly)
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `make presubmit` for full validation
+5. Create a pull request
+
+The CI pipeline will run the exact same checks as `make presubmit`!

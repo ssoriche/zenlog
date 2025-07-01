@@ -41,7 +41,10 @@ func FailUnlessInZenlog() {
 func copyStdinToFile(file string) {
 	out, err := os.OpenFile(file, os.O_WRONLY, 0)
 	util.Check(err, "Unable to open "+file)
-	io.Copy(out, os.Stdin)
+	_, err = io.Copy(out, os.Stdin)
+	if err != nil {
+		util.Warn(err, "io.Copy failed")
+	}
 }
 
 // WriteToLogger read from STDIN and writes to the current logger. Implies FailUnlessInZenlog().
@@ -67,8 +70,14 @@ func WriteToOuter() {
 		line, err := in.ReadBytes('\n')
 		if line != nil {
 			line = bytes.TrimRight(line, "\r\n")
-			out.Write(line)
-			out.Write(crlf)
+			_, writeErr := out.Write(line)
+			if writeErr != nil {
+				util.Warn(writeErr, "Write failed")
+			}
+			_, writeErr = out.Write(crlf)
+			if writeErr != nil {
+				util.Warn(writeErr, "Write failed")
+			}
 		}
 		if err != nil {
 			break
@@ -98,7 +107,7 @@ func checkBinUpdate() {
 
 // MaybeRunBuiltin runs a builtin command if a given command is a builtin subcommand.
 func MaybeRunBuiltin(command string, args []string) {
-	switch strings.Replace(command, "_", "-", -1) {
+	switch strings.ReplaceAll(command, "_", "-") {
 	case "in-zenlog":
 		util.Exit(InZenlog())
 

@@ -14,7 +14,7 @@ var (
 	Debug       = false
 	outputIsRaw = false
 
-	//debugOutSet = false
+	// debugOutSet = false
 	debugOut = os.Stderr
 )
 
@@ -45,7 +45,7 @@ func getNewLine() string {
 
 func replaceLf(s string) string {
 	if outputIsRaw {
-		s = strings.Replace(s, "\n", "\r\n", -1)
+		s = strings.ReplaceAll(s, "\n", "\r\n")
 	}
 	return s
 }
@@ -84,9 +84,9 @@ func Dump(prefix string, obj interface{}) {
 }
 
 func Fatalf(format string, a ...interface{}) {
-	//fmt.Fprint(os.Stderr, "\x1b[0m\x1b[1;31m")
+	// fmt.Fprint(os.Stderr, "\x1b[0m\x1b[1;31m")
 	fmt.Fprint(os.Stderr, formatMessage(format, a...))
-	//fmt.Fprint(os.Stderr, "\x1b[0m")
+	// fmt.Fprint(os.Stderr, "\x1b[0m")
 	fmt.Fprint(os.Stderr, getNewLine())
 	maybePrintStackTrack()
 	ExitFailure()

@@ -26,13 +26,13 @@ func SlicesEqual(a []string, b []string) bool {
 	return true
 }
 
-func AssertStringsEqual(t *testing.T, input string, expected string, actual string) {
+func AssertStringsEqual(t *testing.T, input, expected, actual string) {
 	if expected != actual {
 		t.Errorf("input=%s expected=%s actual=%s", input, expected, actual)
 	}
 }
 
-func AssertStringSlicesEqual(t *testing.T, input string, expected []string, actual []string) {
+func AssertStringSlicesEqual(t *testing.T, input string, expected, actual []string) {
 	if !SlicesEqual(expected, actual) {
 		t.Errorf("input=%s expected=%s actual=%s", input, spew.Sdump(expected), spew.Sdump(actual))
 	}

@@ -10,7 +10,7 @@ import (
 	"syscall"
 
 	"github.com/creack/pty"
-	"github.com/mattn/go-isatty"
+	isatty "github.com/mattn/go-isatty"
 	"github.com/omakoto/go-common/src/shell"
 	"github.com/omakoto/go-common/src/textio"
 	"github.com/omakoto/go-common/src/utils"
@@ -48,10 +48,10 @@ func mustMakeFifo(config *config.Config, suffix string) *os.File {
 	os.Remove(filename)
 
 	util.Debugf("Making fifo '%s'...", filename)
-	err := syscall.Mkfifo(filename, 0600)
+	err := syscall.Mkfifo(filename, 0o600)
 	util.Check(err, "Makefifo failed for '%s'", filename)
 
-	file, err := os.OpenFile(filename, os.O_RDWR, 0600)
+	file, err := os.OpenFile(filename, os.O_RDWR, 0o600)
 	util.Check(err, "OpenFile failed for '%s'", filename)
 	return file
 }
@@ -110,7 +110,7 @@ func (l *Logger) StartChild() {
 
 	// Create a pty and start the child command.
 	util.Debugf("Executing: %s", l.Config.StartCommand)
-	l.child = exec.Command("/bin/sh", "-c",
+	l.child = exec.Command("/bin/sh", "-c", // nolint:gosec // Intentional shell command execution
 		envs.ZenlogSignature+
 			fmt.Sprintf("=\"$(tty)\":%s ", shell.Escape(Signature()))+
 			l.Config.StartCommand)
@@ -118,7 +118,10 @@ func (l *Logger) StartChild() {
 	l.master, err = pty.Start(l.child)
 	util.Check(err, "Unable to create pty or execute /bin/sh")
 
-	util.PropagateTerminalSize(os.Stdin, l.master)
+	err = util.PropagateTerminalSize(os.Stdin, l.master)
+	if err != nil {
+		util.Warn(err, "PropagateTerminalSize failed")
+	}
 }
 
 // Child returns the child process.
@@ -126,7 +129,7 @@ func (l *Logger) Child() *exec.Cmd {
 	return l.child
 }
 
-// Child returns the master tty.
+// Master returns the master tty.
 func (l *Logger) Master() *os.File {
 	return l.master
 }
@@ -136,32 +139,64 @@ func (l *Logger) startForwarders() {
 
 	if l.Config.UseSplice {
 		// Forward the input from stdin to the l.
-		go forward(os.Stdin, m)
+		go func() {
+			err := forward(os.Stdin, m)
+			if err != nil {
+				util.Warn(err, "forward failed")
+			}
+		}()
 
 		// Read the output, and write to the STDOUT, and also to the pipe.
-		go tee(m, l.ForwardPipe, os.Stdout)
+		go func() {
+			err := tee(m, l.ForwardPipe, os.Stdout)
+			if err != nil {
+				util.Warn(err, "tee failed")
+			}
+		}()
 	} else {
-		go forwardSimple(os.Stdin, m)
-		go teeSimple(m, l.ForwardPipe, os.Stdout)
+		go func() {
+			err := forwardSimple(os.Stdin, m)
+			if err != nil {
+				util.Warn(err, "forwardSimple failed")
+			}
+		}()
+		go func() {
+			err := teeSimple(m, l.ForwardPipe, os.Stdout)
+			if err != nil {
+				util.Warn(err, "teeSimple failed")
+			}
+		}()
 	}
 }
 
 func (l *Logger) CleanUp() {
 	if l.master != nil {
-		l.master.Close()
+		err := l.master.Close()
+		if err != nil {
+			util.Warn(err, "master.Close failed")
+		}
 	}
 
-	l.stdinTerm.Restore()
+	err := l.stdinTerm.Restore()
+	if err != nil {
+		util.Warn(err, "stdinTerm.Restore failed")
+	}
 	util.SetOutputIsRaw(false)
 
-	l.ForwardPipe.Close()
-	l.ReversePipe.Close()
+	err = l.ForwardPipe.Close()
+	if err != nil {
+		util.Warn(err, "ForwardPipe.Close failed")
+	}
+	err = l.ReversePipe.Close()
+	if err != nil {
+		util.Warn(err, "ReversePipe.Close failed")
+	}
 
 	util.Warn(os.Remove(l.ForwardPipe.Name()), "Remove failed")
 	util.Warn(os.Remove(l.ReversePipe.Name()), "Remove failed")
 }
 
-func (l *Logger) MustReply(config *config.Config, vals []string) {
+func (l *Logger) MustReply(_ *config.Config, vals []string) {
 	reply := util.Encode(vals)
 	util.Debugf("Replying: %v", vals)
 	_, err := l.ReversePipe.WriteString(reply)
@@ -173,11 +208,17 @@ func (l *Logger) isOpen() bool {
 }
 
 func (l *Logger) SendCloseRequest() {
-	util.WriteToFile(l.Config.LoggerIn, utils.StringSlice(CloseSessionCommand))
+	err := util.WriteToFile(l.Config.LoggerIn, utils.StringSlice(CloseSessionCommand))
+	if err != nil {
+		util.Warn(err, "WriteToFile failed for close request")
+	}
 }
 
 func (l *Logger) SendFlushRequest() {
-	util.WriteToFile(l.Config.LoggerIn, utils.StringSlice(FlushCommand))
+	err := util.WriteToFile(l.Config.LoggerIn, utils.StringSlice(FlushCommand))
+	if err != nil {
+		util.Warn(err, "WriteToFile failed for flush request")
+	}
 }
 
 // Open log files.
@@ -247,12 +288,18 @@ func (l *Logger) write(line []byte) {
 }
 func (l *Logger) flush() {
 	if l.isOpen() {
-		l.logFiles.San.Flush()
-		l.logFiles.Raw.Flush()
+		err := l.logFiles.San.Flush()
+		if err != nil {
+			util.Warn(err, "San.Flush failed")
+		}
+		err = l.logFiles.Raw.Flush()
+		if err != nil {
+			util.Warn(err, "Raw.Flush failed")
+		}
 	}
 }
 
-// Start the forwarders, and do the main loop.
+// DoLogger starts the forwarders, and do the main loop.
 func (l *Logger) DoLogger() {
 	l.startForwarders()
 
