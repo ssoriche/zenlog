@@ -17,7 +17,8 @@ func teeSimple(in, out1, out2 *os.File) error {
 
 	var err error
 	for {
-		nr, err := in.Read(buf)
+		nr, readErr := in.Read(buf)
+		err = readErr
 		if nr > 0 {
 			// First, write to stdout.
 			nw, ew := out1.Write(buf[0:nr])
@@ -36,7 +37,7 @@ func teeSimple(in, out1, out2 *os.File) error {
 			break
 		}
 	}
-	if err != nil && err != io.EOF && err != io.ErrClosedPipe {
+	if err != io.EOF && err != io.ErrClosedPipe {
 		util.Warn(err, "Forwarder finishing with an error")
 	}
 	return err

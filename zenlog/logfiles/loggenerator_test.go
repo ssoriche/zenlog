@@ -1,13 +1,14 @@
 package logfiles
 
 import (
-	"github.com/omakoto/go-common/src/utils"
-	"github.com/omakoto/zenlog/zenlog/config"
-	"github.com/omakoto/zenlog/zenlog/util"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/omakoto/go-common/src/utils"
+	"github.com/omakoto/zenlog/zenlog/config"
+	"github.com/omakoto/zenlog/zenlog/util"
 )
 
 func TestCreateLogFiles(t *testing.T) {

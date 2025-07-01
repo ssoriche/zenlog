@@ -13,20 +13,26 @@ import (
 func startCommand(args []string) {
 	flags := flag.NewFlagSet("zenlog start-command", flag.ExitOnError)
 	e := flags.String("e", "", "Pass string to write to ENV file")
-	flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		util.Fatalf("flags.Parse failed: %v", err)
+	}
 	args = flags.Args()
 
 	if len(args) < 1 {
 		util.Fatalf("start-command expects at least 1 argument.")
 	}
-	logger.StartCommand(*e, args[:], utils.NewClock())
+	logger.StartCommand(*e, args, utils.NewClock())
 }
 
 // endCommand tells zenlog to stop logging for the current command.
 func endCommand(args []string) {
 	flags := flag.NewFlagSet("zenlog end-command", flag.ExitOnError)
 	wantLineNumber := flags.Bool("n", false, "Print number of lines in log")
-	flags.Parse(args)
+	parseErr := flags.Parse(args)
+	if parseErr != nil {
+		util.Fatalf("flags.Parse failed: %v", parseErr)
+	}
 	args = flags.Args()
 
 	exitStatus := -1

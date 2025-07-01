@@ -3,12 +3,13 @@ package logfiles
 // Parse a command line and extract executable names and a comment out of it.
 
 import (
-	"github.com/omakoto/go-common/src/shell"
-	"github.com/omakoto/go-common/src/utils"
-	"github.com/omakoto/zenlog/zenlog/config"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/omakoto/go-common/src/shell"
+	"github.com/omakoto/go-common/src/utils"
+	"github.com/omakoto/zenlog/zenlog/config"
 )
 
 const (
@@ -71,7 +72,7 @@ func extractCommandsWithRegex(config *config.Config, commandLine string) (comman
 	for _, command := range splitCommands(config, pipeLine) {
 		commands = append(commands, reWordSplitter.Pattern().Split(command, -1))
 	}
-	return
+	return commands, comment
 }
 
 func extractCommandsWithParser(config *config.Config, commandLine string) (commands [][]string, comment string) {
@@ -80,7 +81,7 @@ func extractCommandsWithParser(config *config.Config, commandLine string) (comma
 
 	tokens := shell.Split(commandLine)
 	if len(tokens) == 0 {
-		return
+		return commands, comment
 	}
 	last := tokens[len(tokens)-1]
 	if strings.HasPrefix(last, "#") {
@@ -106,7 +107,7 @@ func extractCommandsWithParser(config *config.Config, commandLine string) (comma
 		current = append(current, word)
 	}
 	push()
-	return
+	return commands, comment
 }
 
 func extractCommands(config *config.Config, commandLine string) (commands [][]string, comment string) {

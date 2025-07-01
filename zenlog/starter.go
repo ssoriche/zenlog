@@ -8,11 +8,12 @@ import (
 	"syscall"
 	"time"
 
+	"runtime/pprof"
+
 	"github.com/omakoto/go-common/src/utils"
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/logger"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"runtime/pprof"
 )
 
 const resurrectCode = 13
@@ -26,12 +27,11 @@ func maybeStartEmergencyShell(c *config.Config, startTime time.Time, r interface
 		util.Say("Panic detected: %v", r)
 		startShell = true
 	} else {
-		threshold := 30.0
-		threshold = float64(c.CriticalCrashMaxSeconds)
+		threshold := float64(c.CriticalCrashMaxSeconds)
 
 		// If the child dies too early, something may be wrong, so start a shell...
 		if utils.NewClock().Now().Sub(startTime).Seconds() < threshold {
-			util.Say("Child finished unsuccessfully, too soon?: code=%d%s", childStatus)
+			util.Say("Child finished unsuccessfully, too soon?: code=%d", childStatus)
 			startShell = true
 		}
 	}
@@ -44,13 +44,17 @@ func dumpAllGoroutines() {
 	b := bytes.Buffer{}
 
 	p := pprof.Lookup("goroutine")
-	p.WriteTo(&b, 1)
+	err := p.WriteTo(&b, 1)
+	if err != nil {
+		util.Warn(err, "WriteTo failed")
+		return
+	}
 
 	util.Say(b.String())
 }
 
 func setupSignalHandler(l *logger.Logger, childStatus *int) {
-	sigch := make(chan os.Signal)
+	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch, syscall.SIGCHLD, syscall.SIGWINCH, syscall.SIGHUP, syscall.SIGUSR2)
 
 	// Signal handler.
@@ -60,7 +64,10 @@ func setupSignalHandler(l *logger.Logger, childStatus *int) {
 			case syscall.SIGWINCH:
 				util.Debugf("Caught SIGWINCH")
 
-				util.PropagateTerminalSize(os.Stdin, l.Master())
+				err := util.PropagateTerminalSize(os.Stdin, l.Master())
+				if err != nil {
+					util.Warn(err, "PropagateTerminalSize failed")
+				}
 				l.SendFlushRequest()
 
 			case syscall.SIGHUP:
@@ -75,7 +82,7 @@ func setupSignalHandler(l *logger.Logger, childStatus *int) {
 					util.Warn(err, "Wait failed")
 					*childStatus = 255
 				} else {
-					*childStatus = ps.Sys().(syscall.WaitStatus).ExitStatus()
+					*childStatus = ps.Sys().(syscall.WaitStatus).ExitStatus() // nolint:errcheck // ExitStatus() returns int, not error
 				}
 				l.OnChildDied()
 

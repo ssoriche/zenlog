@@ -2,9 +2,10 @@ package builtins
 
 import (
 	"fmt"
-	"github.com/omakoto/zenlog/zenlog/config"
 	"os"
 	"path/filepath"
+
+	"github.com/omakoto/zenlog/zenlog/config"
 )
 
 func listLogsCommand(args []string) {
@@ -16,7 +17,7 @@ func listLogsCommand(args []string) {
 		top = config.LogDir
 	}
 
-	filepath.Walk(top, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(top, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -43,4 +44,7 @@ func listLogsCommand(args []string) {
 		}
 		return nil
 	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error walking directory: %v\n", err)
+	}
 }

@@ -1,9 +1,10 @@
 package logger
 
 import (
+	"time"
+
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"time"
 )
 
 const (

@@ -1,12 +1,13 @@
 package logger
 
 import (
+	"strings"
+	"time"
+
 	"github.com/omakoto/go-common/src/utils"
 	"github.com/omakoto/zenlog/zenlog/config"
 	"github.com/omakoto/zenlog/zenlog/logfiles"
 	"github.com/omakoto/zenlog/zenlog/util"
-	"strings"
-	"time"
 )
 
 type StartRequest struct {

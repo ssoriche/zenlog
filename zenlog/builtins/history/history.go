@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/omakoto/go-common/src/fileutils"
-	"github.com/omakoto/zenlog/zenlog/config"
-	"github.com/omakoto/zenlog/zenlog/util"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/omakoto/go-common/src/fileutils"
+	"github.com/omakoto/zenlog/zenlog/config"
+	"github.com/omakoto/zenlog/zenlog/util"
 )
 
 type LogFileType int
@@ -40,8 +41,16 @@ func writeIfLink(w *bufio.Writer, filename string) bool {
 		return false
 	}
 	util.Debugf(" -> %s", to)
-	w.WriteString(to)
-	w.WriteString("\n")
+	_, err = w.WriteString(to)
+	if err != nil {
+		util.Warn(err, "WriteString failed")
+		return false
+	}
+	_, err = w.WriteString("\n")
+	if err != nil {
+		util.Warn(err, "WriteString failed")
+		return false
+	}
 	return true
 }
 
@@ -79,8 +88,14 @@ func history(pid, nth int, logType LogFileType, writer io.Writer) bool {
 	if nth > 0 {
 		file := NthLastLog(config, pid, nth, logType)
 		if file != "" {
-			w.WriteString(file)
-			w.WriteString("\n")
+			_, err := w.WriteString(file)
+			if err != nil {
+				util.Warn(err, "WriteString failed")
+			}
+			_, err = w.WriteString("\n")
+			if err != nil {
+				util.Warn(err, "WriteString failed")
+			}
 			success = true
 		}
 	} else {
@@ -111,7 +126,10 @@ func AllHistoryCommand(args []string) {
 	n := flags.Int("n", 0, "Print nth (>=1) last filename")
 	p := flags.Int("p", 0, "Specify ZENLOG_PID")
 
-	flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		util.Fatalf("flags.Parse failed: %v", err)
+	}
 
 	util.Exit(history(*p, *n, flagsToLogType(*r, *e), os.Stdout))
 }
@@ -123,7 +141,10 @@ func CurrentLogCommand(args []string) {
 	e := flags.Bool("e", false, "Print ENV filename")
 	p := flags.Int("p", 0, "Specify ZENLOG_PID")
 
-	flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		util.Fatalf("flags.Parse failed: %v", err)
+	}
 
 	util.Exit(history(*p, 1, flagsToLogType(*r, *e), os.Stdout))
 }
@@ -135,7 +156,10 @@ func LastLogCommand(args []string) {
 	e := flags.Bool("e", false, "Print ENV filename")
 	p := flags.Int("p", 0, "Specify ZENLOG_PID")
 
-	flags.Parse(args)
+	err := flags.Parse(args)
+	if err != nil {
+		util.Fatalf("flags.Parse failed: %v", err)
+	}
 
 	util.Exit(history(*p, 2, flagsToLogType(*r, *e), os.Stdout))
 }
